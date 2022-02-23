@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
     <Title>QuickFIX/n FIX4.4 Messages</Title>
-    <PackageId>QuickFIXn.FIX4.4</PackageId>
+    <PackageId>QuickFIXn.FIX4.4.FinbourneBuild</PackageId>
     <PackageTitle>$(Title)</PackageTitle>
     <Description>Open-source C# implementation of QuickFIX. This package allows you to create applications targeting the FIX 4.4 protocol.</Description>
     <Copyright>Copyright © 2011 - $([System.DateTime]::UtcNow.Year) QuickFIXn.org. All rights reserved.</Copyright>
