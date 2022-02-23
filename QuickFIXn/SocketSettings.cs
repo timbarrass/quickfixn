@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Authentication;
+using System.Text;
 
 namespace QuickFix
 {
@@ -136,6 +137,11 @@ namespace QuickFix
         /// </value>
         public bool RequireClientCertificate { get; internal set; }
 
+        /// <summary>
+        /// The content of a PKCS12 certificate as a byte array.
+        /// </summary>
+        public byte[] P12CertificateContent { get; internal set; }
+
         #endregion
 
         /// <summary>
@@ -187,6 +193,9 @@ namespace QuickFix
 
             if (dictionary.Has(SessionSettings.SSL_CERTIFICATE_PASSWORD))
                 CertificatePassword = dictionary.GetString(SessionSettings.SSL_CERTIFICATE_PASSWORD);
+
+            if (dictionary.Has(SessionSettings.SSL_P12_CERT_BUFFER))
+                P12CertificateContent = Convert.FromBase64String(dictionary.GetString(SessionSettings.SSL_P12_CERT_BUFFER));
 
             if (dictionary.Has(SessionSettings.SSL_VALIDATE_CERTIFICATES))
                 ValidateCertificates = dictionary.GetBool(SessionSettings.SSL_VALIDATE_CERTIFICATES);

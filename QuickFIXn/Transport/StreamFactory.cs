@@ -143,8 +143,9 @@ namespace QuickFix.Transport
         /// </summary>
         /// <param name="name">The certificate path or DistinguishedName/subjectname if it should be loaded from the personal certificate store.</param>
         /// <param name="password">The certificate password.</param>
+        /// <param name="p12CertContent">Certificate content as byte buffer.</param>
         /// <returns>The specified certificate, or null if no certificate is found</returns>
-        internal static X509Certificate2 LoadCertificate(string name, string password)
+        internal static X509Certificate2 LoadCertificate(string name, string password, byte[] p12CertContent)
         {
             X509Certificate2 certificate;
 
@@ -156,7 +157,7 @@ namespace QuickFix.Transport
                 if (_certificateCache.TryGetValue(name, out certificate))
                     return certificate;
 
-                certificate = LoadCertificateInner(name, password);
+                certificate = LoadCertificateInner(name, password, p12CertContent);
 
                 if (certificate != null)
                     _certificateCache.Add(name, certificate);
@@ -170,23 +171,45 @@ namespace QuickFix.Transport
         /// </summary>
         /// <param name="name">The certificate path or DistinguishedName/subjectname if it should be loaded from the personal certificate store.</param>
         /// <param name="password">The certificate password.</param>
+        /// <param name="p12CertContent">Raw byte array containing p12 cert content</param>
         /// <returns>The specified certificate, or null if no certificate is found</returns>
-        private static X509Certificate2 LoadCertificateInner(string name, string password)
+        private static X509Certificate2 LoadCertificateInner(string name, string password, byte[] p12CertContent)
         {
             X509Certificate2 certificate;
 
             // If no extension is found try to get from certificate store
-            if (!File.Exists(name))
+            if (File.Exists(name))
             {
-                certificate = GetCertificateFromStore(name);
+                // Assume this is a filename and read it
+                if (password == null)
+                {
+                    certificate = new X509Certificate2(name);
+                }
+                else
+                {
+                    certificate = new X509Certificate2(name, password);
+                }
             }
             else
             {
-                if (password != null)
-                    certificate = new X509Certificate2(name, password);
+                // If we've been given a buffer holding certificate content
+                if (p12CertContent != null && p12CertContent.Any())
+                {
+                    if (password == null)
+                    {
+                        certificate = new X509Certificate2(p12CertContent);
+                    }
+                    else
+                    {
+                        certificate = new X509Certificate2(p12CertContent, password);
+                    }
+                }
                 else
-                    certificate = new X509Certificate2(name);
+                {
+                    certificate = GetCertificateFromStore(name);
+                }
             }
+
             return certificate;
         }
 
@@ -289,7 +312,7 @@ namespace QuickFix.Transport
                         throw new Exception(string.Format("No server certificate specified, the {0} setting must be configured", SessionSettings.SSL_CERTIFICATE));
 
                     // Setup secure SSL Communication
-                    X509Certificate2 serverCertificate = StreamFactory.LoadCertificate(socketSettings_.CertificatePath, socketSettings_.CertificatePassword);
+                    var serverCertificate = StreamFactory.LoadCertificate(socketSettings_.CertificatePath, socketSettings_.CertificatePassword, socketSettings_.P12CertificateContent);
                     sslStream.AuthenticateAsServer(serverCertificate,
                         socketSettings_.RequireClientCertificate,
                         socketSettings_.SslProtocol,
@@ -306,10 +329,12 @@ namespace QuickFix.Transport
 
             private X509CertificateCollection GetClientCertificates()
             {
+                // Note - expect to have this set as its used as the cert name in the store, even if we're using
+                // P12 format cert buffer
                 if (!string.IsNullOrEmpty(socketSettings_.CertificatePath))
                 {
                     X509CertificateCollection certificates = new X509Certificate2Collection();
-                    X509Certificate2 clientCert = StreamFactory.LoadCertificate(socketSettings_.CertificatePath, socketSettings_.CertificatePassword);
+                    X509Certificate2 clientCert = StreamFactory.LoadCertificate(socketSettings_.CertificatePath, socketSettings_.CertificatePassword, socketSettings_.P12CertificateContent);
                     certificates.Add(clientCert);
                     return certificates;
                 }
@@ -377,7 +402,7 @@ namespace QuickFix.Transport
                     chain0.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
                     // add all your extra certificate chain
 
-                    chain0.ChainPolicy.ExtraStore.Add(StreamFactory.LoadCertificate(socketSettings_.CACertificatePath, null));
+                    chain0.ChainPolicy.ExtraStore.Add(StreamFactory.LoadCertificate(socketSettings_.CACertificatePath, null, null));
                     chain0.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
                     bool isValid = chain0.Build((X509Certificate2)certificate);
 
