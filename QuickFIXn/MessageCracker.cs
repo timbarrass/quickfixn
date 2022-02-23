@@ -69,7 +69,11 @@ namespace QuickFix
             return (m.IsPublic == true
                 && m.Name.Equals("OnMessage")
                 && m.GetParameters().Length == 2
-                && m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(QuickFix.Message))
+                && (
+                    m.GetParameters()[0].ParameterType.IsSubclassOf(typeof(QuickFix.Message))
+                    || 
+                    m.GetParameters()[0].ParameterType == typeof(QuickFix.Message)
+                )
                 && typeof(QuickFix.SessionID).IsAssignableFrom(m.GetParameters()[1].ParameterType)
                 && m.ReturnType == typeof(void));
         }
