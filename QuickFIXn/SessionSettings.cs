@@ -79,6 +79,7 @@ namespace QuickFix
         public const string SSL_CERTIFICATE_PASSWORD = "SSLCertificatePassword";
         public const string SSL_REQUIRE_CLIENT_CERTIFICATE = "SSLRequireClientCertificate";
         public const string SSL_CA_CERTIFICATE = "SSLCACertificate";
+        public const string SSL_P12_CERT_BUFFER = "SSLP12CertificateContent";
 
         #endregion
 
